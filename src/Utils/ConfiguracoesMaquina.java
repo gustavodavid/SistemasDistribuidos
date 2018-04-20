@@ -19,9 +19,17 @@ public class ConfiguracoesMaquina {
 		this.cpu = cpu;
 		this.memoria = memoria;
 		this.porta = porta;
-		this.ativa = false;
+		this.ativa = true;
 		
 		this.descobrirIpv4();
+	}
+	
+	public ConfiguracoesMaquina(String cpu, String memoria) {
+		
+		this.cpu = cpu;
+		this.memoria = memoria;
+		this.porta = porta;
+		this.ativa = true;
 	}
 	
 	public void descobrirIpv4() {
@@ -38,6 +46,11 @@ public class ConfiguracoesMaquina {
 	}
 
 	// Get&Set
+	public String getConfiguracoesMaquina() {
+		
+		return (this.getCpu())+";"+(this.getMemoria());
+	}
+	
 	public String getIp() {
 		return ip;
 	}

@@ -7,6 +7,7 @@ import java.util.ArrayList;
 
 import Cliente.AgenteConectarComServidor;
 import Cliente.Cliente;
+import Models.Conexao;
 import Servidor.Servidor;
 import Utils.ConfiguracoesMaquina;
 
@@ -15,7 +16,7 @@ public class ControllerConexoes {
 	private Cliente cliente;
 	private Servidor servidor;
 	
-	private ArrayList<Socket> conexoes = new ArrayList<Socket>();
+	private ArrayList<Conexao> conexoes = new ArrayList<Conexao>();
 	
 	private ConfiguracoesMaquina configuracoesMaquina;
 	
@@ -29,28 +30,27 @@ public class ControllerConexoes {
 	}
 	
 	// Serviços
-	public void receberNovaConexao(Socket novaConexao) {
+	public void receberNovaConexao(Socket novoSocket) {
 		
-		System.out.println("Conexão "+novaConexao.getInetAddress().getHostAddress()+" adicionada a lista.");
+		String ipNovaConexao = novoSocket.getInetAddress().getHostAddress();
+		
+		System.out.println("Conexão "+ipNovaConexao+" adicionada a lista.");
+		
+		Conexao conexaoJaExistente = this.existeConexao(ipNovaConexao);
+		
+		if(conexaoJaExistente != null) {
+			
+			this.conexoes.remove(conexaoJaExistente);
+		}
+		
+		Conexao novaConexao = new Conexao(novoSocket, this);
+		
 		this.conexoes.add(novaConexao);
 	}
 	
 	public void enviarMensagem(String mensagem) {
 		
-		System.out.println("Número de servidores: "+this.conexoes.size());
-		
-		for (Socket s : conexoes) {
-			
-			try {
-				System.out.println("Enviando mensagem para: "+s.getInetAddress().getHostAddress());
-				PrintStream saida = new PrintStream(s.getOutputStream());
-				
-				saida.println(mensagem);
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
+		this.cliente.enviarMensagem(mensagem);
 	}
 	
 	private void varrerRede() {
@@ -68,34 +68,47 @@ public class ControllerConexoes {
 				System.out.println("Meu ip: "+ipVerificado);
 			} else {
 				
-				if(this.existeConexao(ipVerificado).equals(ipVerificado)) {
+				Conexao conexaoExistente = this.existeConexao(ipVerificado);
+				
+				if( conexaoExistente == null) {
 					System.out.println("Meu ip: "+ipVerificado);
 					
-				} else {
-				
-				AgenteConectarComServidor agente = new AgenteConectarComServidor(this, ipVerificado, 12345);
-				
-				Thread agenteConectarComServidor = new Thread(agente);
-				agenteConectarComServidor.start();
-		
+					this.conectarComServidor(ipVerificado);
 				}
-
 			}
 		}
 		
 		System.out.println("Terminou a varredura!");
 	}
 	
-	public String existeConexao(String ipVerificado) {
-//		System.out.println("Verificando se existe conexão já estabelecida!");
-		for (Socket s : this.conexoes) {
+	private void conectarComServidor(String ipVerificado) {
+		
+		AgenteConectarComServidor agente = new AgenteConectarComServidor(this, ipVerificado, 12345);
+		
+		Thread agenteConectarComServidor = new Thread(agente);
+		agenteConectarComServidor.start();
+	}
+	
+	
+	public void receberMensagem(String ip, String mensagem) {
+		
+		System.out.println(ip+": "+mensagem);
+	}
+	
+	public Conexao existeConexao(String ipVerificado) {
+		System.out.println("Verificando se já existe conexão estabelecida!");
+		
+		for (Conexao conexao : this.conexoes) {
 			
-			if(s.getInetAddress().getHostAddress().equals(ipVerificado)) {
-				return s.getInetAddress().getHostAddress();
+			String ipConexao = conexao.getConexao().getInetAddress().getHostAddress();
+			
+			if(ipVerificado.equals(ipConexao)) {
+				
+				return conexao;
 			}
 		}
 		
-		return "";
+		return null;
 	}
 	
 	// Get&Set
@@ -105,7 +118,7 @@ public class ControllerConexoes {
 		return this.configuracoesMaquina.getPorta();
 	}
 	
-	public ArrayList<Socket> getConexoes() {
+	public ArrayList<Conexao> getConexoes() {
 		return conexoes;
 	}
 
@@ -116,5 +129,17 @@ public class ControllerConexoes {
 		System.out.println(ipBaseAux.length);
 		
 		return (ipBaseAux[0]+"."+ipBaseAux[1]+"."+ipBaseAux[2]+".");
+	}
+
+	public void atualizarConfiguracoesMaquinaConexao(String ip, String dados) {
+		// TODO Auto-generated method stub
+		
+		
+	}
+
+	public void enviarConfiguracoesMaquinaConexao(String ip) {
+		// TODO Auto-generated method stub
+		
+		this.cliente.enviarConfiguracoesMaquinaConexao(ip, ""+this.configuracoesMaquina.getConfiguracoesMaquina());
 	}
 }

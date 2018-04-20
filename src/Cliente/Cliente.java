@@ -5,31 +5,39 @@ import java.io.PrintStream;
 import java.net.Socket;
 
 import Controllers.ControllerConexoes;
+import Models.Conexao;
 
 
 public class Cliente {
 	
 	private ControllerConexoes contexto;
+	final private String SEPARADOR_ID = "";
 	
 	public Cliente(ControllerConexoes contexto) {
 		
 		this.contexto = contexto;
 	}
 	
-	public void enviarMensagem(String mensagem) {
-		System.out.println("Client enviando mensagem: "+mensagem);
+	public void enviarMensagem(String mensagem ) {
+		
 		System.out.println("Número de servidores: "+this.contexto.getConexoes().size());
 		
-		for (Socket s : this.contexto.getConexoes()) {
+		for (Conexao conexao: this.contexto.getConexoes()) {
 			
-			try {
-				System.out.println("Enviando mensagem para: "+s.getInetAddress().getHostAddress());
-				PrintStream saida = new PrintStream(s.getOutputStream());
+			conexao.enviarMensagem(mensagem);
+		}
+	}
+
+	public void enviarConfiguracoesMaquinaConexao(String ip, String configuracoesMaquina) {
+		// TODO Auto-generated method stub
+		
+		System.out.println("Enviando configurações da máquina para o ip: "+ip);
+		
+		for (Conexao conexao : this.contexto.getConexoes()) {
+			
+			if( conexao.getEquals(ip)) {
 				
-				saida.println(mensagem);
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				conexao.enviarMensagem("getConfiguracoesMaquinaResponse"+SEPARADOR_ID+configuracoesMaquina);
 			}
 		}
 	}
